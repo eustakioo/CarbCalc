@@ -1,4 +1,4 @@
-name: Build APK (Debug)
+name: Build APK (Debug, Hardened)
 
 on:
   workflow_dispatch:
@@ -11,6 +11,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Print environment info
+        run: |
+          echo "Runner: $RUNNER_OS"
+          uname -a || true
+          lsb_release -a || true
+          env | sort
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -30,17 +37,23 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses
 
+      - name: Print Android SDK tree
+        run: |
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          ls -la "$ANDROID_SDK_ROOT"
+          ls -la "$ANDROID_SDK_ROOT/build-tools"
+          ls -la "$ANDROID_SDK_ROOT/platforms"
+
       - name: Set up Gradle 8.7
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: 8.7
 
-      # Importante: usamos "gradle", NO "./gradlew"
-      - name: Build debug APK
-        run: gradle --no-daemon assembleDebug
+      - name: Gradle sanity checks
+        run: |
+          gradle --version
+          gradle -q tasks || true
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Build debug APK (with diagnostics)
+        run: |
+          se
